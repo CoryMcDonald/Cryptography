@@ -3,7 +3,7 @@ from Crypto.PublicKey import RSA
 from Crypto import Random
 import ast
 import rsa
-
+from random import getrandbits
 # Alice (as a Client) needs to send a message of 2000 bytes to Bob (as a
 # Server), where each byte is 'a'; Bob needs to return a message of 1000 bytes back to Alice,
 # where each byte is 'b'. Either TCP or UDP is fine for the transport protocol.
@@ -103,11 +103,18 @@ def RSAEncrypt(message, publicKey):
    return encrypted
 
 def RSADecrypt(encrypted, privateKey):
-   bobLol = rsa.PrivateKey.load_pkcs1(privateKey,'PEM')
-   decrypted = rsa.decrypt(encrypted, bobLol)
+   privateKeyClass = rsa.PrivateKey.load_pkcs1(privateKey,'PEM')
+   decrypted = rsa.decrypt(privateKeyClass)
    print 'decrypted', decrypted
 
-
+def DiffieHellman(privateKey)
+	g = 7
+	prime = 84619573
+	a = getrandbits(bits)
+	A = pow(g, privateKey, prime)
+	#Do socket stuff, send Bob A, recieve B
+	secret = pow(B,a,prime)
+	
 
 # pycrypto
 # http://stackoverflow.com/questions/30056762/rsa-encryption-and-decryption-in-python
