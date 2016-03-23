@@ -15,6 +15,9 @@ import rsa
 # other's public key in advance. For the communication from Bob to Alice, they agree on a shared
 # secret key using the Diffie-Hellman protocol. You can assume that Bob selects the public
 # parameters of Diffie-Hellman protocol, and send them to Alice
+
+sharedSecret = 'DC83C6A952B5D52A9E57FDAB05BE8D085BD0197862399DAE763BB2C898B8AF45'
+
 bobPublicKey = ''
 alicePublicKey = b"""-----BEGIN PUBLIC KEY-----
 MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAi17GtUa/HzNlrEsG80rv
@@ -91,33 +94,20 @@ G9XqxvevbfX0hjjPJfV6qsSofL4BpnfnmjitbGGVV6KDegLtDsbANsp1n/ov9y3n
 rYxlTsFckzKCbA44pTMQuiKdWkcUE3vaKN18YPWYXC43XQK4f1s=
 -----END RSA PRIVATE KEY-----"""
 
-sharedSecretKey = 'pizza'
-
-alice = rsa.PublicKey.load_pkcs1_openssl_pem(bobPublicKey)
-
-encrypted = rsa.encrypt(sharedSecretKey, alice)
-#message to encrypt is in the above line 'encrypt this message'
-
-print 'encrypted message:', encrypted #ciphertext
-f = open ('encryption.txt', 'w')
-f.write(str(encrypted)) #write ciphertext to file
-f.close()
-
-#decrypted code below
-
-f = open('encryption.txt', 'r')
-message = f.read()
+message = 'Boy, oh boy do I love pizza!'
 
 
-bobLol = rsa.PrivateKey.load_pkcs1(bobPrivateKey,'PEM')
-decrypted = rsa.decrypt(encrypted, bobLol)
+def RSAEncrypt(message, publicKey):
+   publicKeyClass = rsa.PublicKey.load_pkcs1_openssl_pem(publicKey)
+   encrypted = rsa.encrypt(message, publicKeyClass)
+   return encrypted
 
-print 'decrypted', decrypted
+def RSADecrypt(encrypted, privateKey):
+   bobLol = rsa.PrivateKey.load_pkcs1(privateKey,'PEM')
+   decrypted = rsa.decrypt(encrypted, bobLol)
+   print 'decrypted', decrypted
 
-f = open ('encryption.txt', 'w')
-f.write(str(message))
-f.write(str(decrypted))
-f.close()
+
 
 # pycrypto
 # http://stackoverflow.com/questions/30056762/rsa-encryption-and-decryption-in-python
