@@ -129,14 +129,15 @@ def Alice():
     A = DiffieHellman(alicePrivateKey)
     B = long(ClientSend(A))
     priv = rsa.PrivateKey.load_pkcs1(alicePrivateKey).n
-    s1 = generateSharedSecret(B, priv)
-    print s1
+    
+    step1SharedKey = generateSharedSecret(B, priv)
+    
 
 def Bob():
     A = Server()
     yep = rsa.PrivateKey.load_pkcs1(bobPrivateKey).n
     s1 = generateSharedSecret(A, yep)
-    print s1
+    
 
 def Server():
     # create TCP welcoming socket
