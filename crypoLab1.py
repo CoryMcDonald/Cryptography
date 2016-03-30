@@ -117,31 +117,28 @@ def RSADecrypt(encrypted, privateKey):
    decrypted = rsa.decrypt(privateKeyClass)
    print 'decrypted', decrypted
 
-def DiffieHellmanAlice():
-    a = rsa.PrivateKey.load_pkcs1(alicePrivateKey).n
-    A = pow(g, a, prime)
-    B = long(Alice(A))
-    s2 = pow(B, a, prime)
-    
-    print '-------------------------------'
-    print ''
-    print s2
-    print ''
-    print '-------------------------------'
-    
-def DiffieHellmanBob(A):
-    b = rsa.PrivateKey.load_pkcs1(bobPrivateKey).n
-    B = pow(g, b, prime)
-    s1 = pow(A, b, prime)
-    print '-------------------------------'
-    print ''
-    print s1
-    print ''
-    print '-------------------------------'
-    return B
+def DiffieHellman( privateKey):
+    privateKeyClass = rsa.PrivateKey.load_pkcs1(privateKey).n
+    result = pow(g, privateKeyClass, prime)
+    return result    
 
+def generateSharedSecret(A, privateKey):
+    return pow(A, privateKey, prime)
+
+def Alice():
+    A = DiffieHellman(alicePrivateKey)
+    B = long(ClientSend(A))
+    priv = rsa.PrivateKey.load_pkcs1(alicePrivateKey).n
+    s1 = generateSharedSecret(B, priv)
+    print s1
 
 def Bob():
+    A = Server()
+    yep = rsa.PrivateKey.load_pkcs1(bobPrivateKey).n
+    s1 = generateSharedSecret(A, yep)
+    print s1
+
+def Server():
     # create TCP welcoming socket
     serverSocket = socket(AF_INET,SOCK_STREAM)
     serverSocket.bind(("",serverPort))
@@ -157,17 +154,17 @@ def Bob():
         # read a sentence of bytes from socket sent by the client
         sentence = long(connectionSocket.recv(2048))
         # print('Recieved ', sentence)
-        clientMessage = DiffieHellmanBob(sentence)
+        clientMessage = DiffieHellman(bobPrivateKey)
         # print('Sending ', clientMessage)
 
         # send back modified sentence over the TCP connection
         connectionSocket.send(bytes(clientMessage))
-        # recieved = True 
+        recieved = True 
         # close the TCP connection; the welcoming socket continues
         connectionSocket.close()
-    return clientMessage
+    return sentence
 
-def Alice(sentence):
+def ClientSend(sentence):
     clientSocket = socket(AF_INET, SOCK_STREAM)
 
     # initiate the TCP connection between the client and server
@@ -179,14 +176,14 @@ def Alice(sentence):
     for i in range(0,5):
         try:
             clientSocket.connect((serverName,serverPort))
-            print('Sending ', sentence)
+            # print('Sending ', sentence)
             clientSocket.send(bytes(sentence))
 
             responseFromServer = clientSocket.recv(2048)
 
             clientSocket.close()
             # output the modified user's line 
-            print ("From Server: ", responseFromServer)
+            # print ("From Server: ", responseFromServer)
 
             break
         except socket_error as serr:
@@ -196,9 +193,9 @@ def Alice(sentence):
             print 'Connection to server failed'
     return responseFromServer
 
+
 def main():
     if(len(sys.argv) < 2):
-        DiffieHellmanAlice()
         print("Please send 'alice' or 'bob' as a parameter as to determine which user is running")
     else:
         param = str(sys.argv[1])
@@ -208,8 +205,6 @@ def main():
         elif(param[0].upper() == 'B'):
             print 'Running as Bob'
             Bob()
-
-
 
 
 # pycrypto
