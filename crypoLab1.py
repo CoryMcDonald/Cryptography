@@ -118,22 +118,26 @@ def RSADecrypt(encrypted, privateKey):
    print 'decrypted', decrypted
 
 def DiffieHellmanAlice():
+    a = rsa.PrivateKey.load_pkcs1(alicePrivateKey).n
+    A = pow(g, a, prime)
+    B = long(Alice(A))
+    s2 = pow(B, a, prime)
     
-    aliceNumber = rsa.PrivateKey.load_pkcs1(alicePrivateKey,'PEM').n
-    A = pow(g, aliceNumber, prime)
-    B = Alice(A)
-    s2 = pow(long(B), aliceNumber, prime)
-    print ''
+    print '-------------------------------'
     print ''
     print s2
-    
-def DiffieHellmanBob(aliceSent):
-    bobPrivate = rsa.PrivateKey.load_pkcs1(bobPrivateKey,'PEM').n
-    B = pow(g, bobPrivate, prime)
-    s1 = pow(aliceSent, bobPrivate, prime)
     print ''
+    print '-------------------------------'
+    
+def DiffieHellmanBob(A):
+    b = rsa.PrivateKey.load_pkcs1(bobPrivateKey).n
+    B = pow(g, b, prime)
+    s1 = pow(A, b, prime)
+    print '-------------------------------'
     print ''
     print s1
+    print ''
+    print '-------------------------------'
     return B
 
 
@@ -151,7 +155,7 @@ def Bob():
         connectionSocket, addr = serverSocket.accept()
         print addr 
         # read a sentence of bytes from socket sent by the client
-        sentence = long(connectionSocket.recv(1024))
+        sentence = long(connectionSocket.recv(2048))
         # print('Recieved ', sentence)
         clientMessage = DiffieHellmanBob(sentence)
         # print('Sending ', clientMessage)
@@ -175,14 +179,14 @@ def Alice(sentence):
     for i in range(0,5):
         try:
             clientSocket.connect((serverName,serverPort))
-            # print('Sending ', sentence)
+            print('Sending ', sentence)
             clientSocket.send(bytes(sentence))
 
-            responseFromServer = clientSocket.recv(1024)
+            responseFromServer = clientSocket.recv(2048)
 
             clientSocket.close()
             # output the modified user's line 
-            # print ("From Server: ", responseFromServer)
+            print ("From Server: ", responseFromServer)
 
             break
         except socket_error as serr:
