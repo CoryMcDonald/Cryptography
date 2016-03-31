@@ -5,7 +5,7 @@ from Crypto.Random.random import StrongRandom
 from Crypto.Cipher import AES
 from Crypto.Hash import HMAC
 from Crypto.Hash import SHA256
-
+from Crypto.Signature import PKCS1_v1_5
 import ast
 import rsa
 from random import getrandbits
@@ -113,31 +113,7 @@ rYxlTsFckzKCbA44pTMQuiKdWkcUE3vaKN18YPWYXC43XQK4f1s=
 def HMACMessage(message,secretKey): # call by bob and send it to alice with the message, have alice decrypt the message and then call this function with the message, compare it with the hash she got from bob
     h = HMAC.new(secretKey)
     h.update(message)
-    return h.hexdigest()
-
-def setAliceToBobAESCipher(secretKey): #Pass first secret key
-    global aesAliceToBobCipher
-    aesAliceToBobCipher = AES.new(secretKey)
-
-def AESEncryptAliceToBob(plaintext): #Call from alice and then send by RSA
-    global aesAliceToBobCipher
-    return aesAliceToBobCipher.encrypt(plaintext)
-    
-def AESDecryptAliceToBob(ciphertext): #Call by bob after getting it from alice
-    global aesAliceToBobCipher
-    return aesAliceToBobCipher.decrypt(ciphertext)
-    
-def setBobToAliceAESCipher(secretKey): #Pass second secret key
-    global aesBobToAliceCipher 
-    aesBobToAliceCipher = AES.new(secretKey)
-
-def AESEncryptBobToAlice(plaintext): #call by bob and then send to alice by RSA
-    global aesBobToAliceCipher
-    return aesBobToAliceCipher.encrypt(plaintext)
-    
-def AESDecryptBobToAlice(ciphertext): #call by alice to decrypt bob's message
-    global aesBobToAliceCipher
-    return aesBobToAliceCipher.decrypt(ciphertext)
+    return h.digest()
     
 diffieHellmanPrivate = StrongRandom().randint(0,prime)
 
@@ -179,36 +155,47 @@ def BobGenerateSecretKeys():
 
 def Alice():
     message = ('a'*2000) 
-
     sharedSecretKeys = []
     global diffieHellmanPrivate
     secretKeys1 = AliceGenerateSecretKeys()
+	aesAliceToBobCipher = AES.new(secretKeys1[0])
+	aesBobToAliceCipher = AES.new(secretKeys1[2])
     secretKeys2 = AliceGenerateSecretKeys()
-    # print(secretKeys1[0])
-    # print '----------'
-    # print(secretKeys1[1])
 
     privateKey = rsa.PrivateKey.load_pkcs1(alicePrivateKey,'PEM')
     signature = rsa.sign(message, privateKey, 'SHA-256')
     setAliceToBobAESCipher(secretKeys1[0])
-    encryptedMessage = AESEncryptAliceToBob(message)
-    # ClientSend([signature, encryptedMessage])
-
+    encryptedMessage = aesAliceToBobCipher.encrypt(message)
+	
+    BobMessage = ClientSend([signature, encryptedMessage])
+	decryptedMessage = aesBobToAliceCipher.decrypt(BobMessage[1])
+	if(BobMessage[0] == HMACMessage(decryptedMessage))
+		print 'success'
+		
 
 def Bob():
     message = ('b'*1967) 
     global diffieHellmanPrivate
     secretKeys1 = BobGenerateSecretKeys()
+	aesAliceToBobCipher = AES.new(secretKeys1[0])
+	aesBobToAliceCipher = AES.new(secretKeys1[2])
     secretKeys2 = BobGenerateSecretKeys()
     
-    # privateKey = rsa.PrivateKey.load_pkcs1(bobPrivateKey,'PEM')
-    # signature = rsa.sign(message, privateKey, 'SHA-256')
-    
-    # encryptedMessage = AESEncryptBobToAlice(message, alicePublicKey)
-    # Server([signature, encryptedMessage])    
-    # HMACMessage(message, str(s1))
-
-    
+    privateKey = rsa.PrivateKey.load_pkcs1(bobPrivateKey,'PEM')
+	aesBobToAliceCipher.encrypt(message)
+    encryptedMessage = AESEncryptBobToAlice(message, alicePublicKey)
+    hmac = HMACMessage(message, str(secretKeys2[1]))
+	
+    AliceMessage = Server([hmac, encryptedMessage])
+    aliceSentMessage = aesAliceToBobCipher.decrypt(AliceMessage[1])
+	
+	publicKey = rsa.PrivateKey.load_pkcs1(alicePublicKey,'PEM')
+    h = SHA.new(aliceSentMessage)
+	verifier = PKCS1_v1_5.new(key)
+	if verifier.verify(h, publicKey):
+		print "The signature is authentic."
+	else:
+		print "The signature is not authentic."
 
 def Server(message):
     # create TCP welcoming socket
@@ -287,3 +274,4 @@ def main():
 # https://github.com/lowazo/pyDHE/blob/master/DiffieHellman.py
 
 main()
+
