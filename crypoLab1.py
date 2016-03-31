@@ -1,6 +1,8 @@
 import Crypto
 from Crypto.PublicKey import RSA
 from Crypto.Random.random import StrongRandom
+from Crypto.Cipher import AES
+from Crypto.Hash import HMAC
 import ast
 import rsa
 from random import getrandbits
@@ -105,7 +107,29 @@ rYxlTsFckzKCbA44pTMQuiKdWkcUE3vaKN18YPWYXC43XQK4f1s=
 -----END RSA PRIVATE KEY-----"""
 
 message = 'Boy, oh boy do I love pizza!'
+def HMACMessage(message,secretKey)# call by bob and send it to alice with the message, have alice decrypt the message and then call this function with the message, compare it with the hash she got from bob
+	h = HMAC.new(secretKey)
+	h.update(message)
+	return h.hexdigest()
 
+def setAliceToBobAESCipher(secretKey) #Pass first secret key
+	aesAliceToBobCipher = AES.new(secretKey)
+
+def AESEncryptAliceToBob(plaintext)#Call from alice and then send by RSA
+	aesAliceToBobCipher.encrypt(plaintext)
+	
+def AESDecryptAliceToBob(ciphertext)#Call by bob after getting it from alice
+	aesAliceToBobCipher.decrypt(ciphertext)
+	
+def setBobToAliceAESCipher(secretKey) #Pass second secret key
+	aesBobToAliceCipher = AES.new(secretKey)
+
+def AESEncryptBobToAlice(plaintext)#call by bob and then send to alice by RSA
+	aesBobToAliceCipher.encrypt(plaintext)
+	
+def AESDecryptBobToAlice(ciphertext)#call by alice to decrypt bob's message
+	aesBobToAliceCipher.decrypt(ciphertext)
+	
 diffieHellmanPrivate = StrongRandom().randint(0,prime)
 
 
