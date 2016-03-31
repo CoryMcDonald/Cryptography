@@ -1,6 +1,6 @@
 import Crypto
 from Crypto.PublicKey import RSA
-from Crypto import Random
+from Crypto.Random.random import StrongRandom
 import ast
 import rsa
 from random import getrandbits
@@ -106,6 +106,8 @@ rYxlTsFckzKCbA44pTMQuiKdWkcUE3vaKN18YPWYXC43XQK4f1s=
 
 message = 'Boy, oh boy do I love pizza!'
 
+diffieHellmanPrivate = StrongRandom().randint(0,prime)
+
 
 def RSAEncrypt(message, publicKey):
    publicKeyClass = rsa.PublicKey.load_pkcs1_openssl_pem(publicKey)
@@ -118,25 +120,51 @@ def RSADecrypt(encrypted, privateKey):
    print 'decrypted', decrypted
 
 def DiffieHellman( privateKey):
-    privateKeyClass = rsa.PrivateKey.load_pkcs1(privateKey).n
-    result = pow(g, privateKeyClass, prime)
+    result = pow(g, privateKey, prime)
     return result    
 
 def generateSharedSecret(A, privateKey):
     return pow(A, privateKey, prime)
 
+
+def AliceGenerateSecretKey():
+    A = DiffieHellman(diffieHellmanPrivate)
+    B = long(ClientSend(A))    
+    sharedKey = generateSharedSecret(B, diffieHellmanPrivate)
+    return sharedKey
+
+def BobGenerateSecretKey():
+    A = Server()
+    sharedKey = generateSharedSecret(A, diffieHellmanPrivate)
+    return sharedKey
+
 def Alice():
-    A = DiffieHellman(alicePrivateKey)
-    B = long(ClientSend(A))
-    priv = rsa.PrivateKey.load_pkcs1(alicePrivateKey).n
+    global diffieHellmanPrivate
+    s1 = AliceGenerateSecretKey()
+    diffieHellmanPrivate =  StrongRandom().randint(0,prime)
+    s2 = AliceGenerateSecretKey()
+    diffieHellmanPrivate =  StrongRandom().randint(0,prime)
+    s3 = AliceGenerateSecretKey()
     
-    step1SharedKey = generateSharedSecret(B, priv)
-    
+    # print(step1SharedKey)
+    print s1
+    print '-------------'
+    print s2
+    print '-------------'
+    print s3
 
 def Bob():
-    A = Server()
-    yep = rsa.PrivateKey.load_pkcs1(bobPrivateKey).n
-    s1 = generateSharedSecret(A, yep)
+    global diffieHellmanPrivate
+    s1 = BobGenerateSecretKey()
+    diffieHellmanPrivate =  StrongRandom().randint(0,prime)
+    s2 = BobGenerateSecretKey()
+    diffieHellmanPrivate =  StrongRandom().randint(0,prime)
+    s3 = BobGenerateSecretKey()
+    print s1
+    print '-------------'
+    print s2
+    print '-------------'
+    print s3
     
 
 def Server():
@@ -151,11 +179,10 @@ def Server():
     while not recieved:
         # server waits for incoming requests; new socket created on return
         connectionSocket, addr = serverSocket.accept()
-        print addr 
         # read a sentence of bytes from socket sent by the client
         sentence = long(connectionSocket.recv(2048))
         # print('Recieved ', sentence)
-        clientMessage = DiffieHellman(bobPrivateKey)
+        clientMessage = DiffieHellman(diffieHellmanPrivate)
         # print('Sending ', clientMessage)
 
         # send back modified sentence over the TCP connection
