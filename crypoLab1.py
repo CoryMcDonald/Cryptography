@@ -169,7 +169,7 @@ def Alice():
 	
     BobMessage = ClientSend([signature, encryptedMessage])
 	decryptedMessage = aesBobToAliceCipher.decrypt(BobMessage[1])
-	if(BobMessage[0] == HMACMessage(decryptedMessage))
+	if(BobMessage[0] == HMACMessage(decryptedMessage,secretKeys2[1]))
 		print 'success'
 		
 
