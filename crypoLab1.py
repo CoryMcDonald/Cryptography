@@ -160,7 +160,7 @@ def generateSharedSecret(A, privateKey):
 
 
 def AliceGenerateSecretKeys():
-    RSASecret = str(StrongRandom().randint(0,256))
+    RSASecret =str(StrongRandom().randint(10**31, (10**32)-1))
     firstMessage = RSAEncrypt(RSASecret, bobPublicKey)
     BobDH = ClientSend(firstMessage)    
     A = DiffieHellman(diffieHellmanPrivate)
@@ -178,15 +178,20 @@ def BobGenerateSecretKeys():
     return [s1, s2]
 
 def Alice():
-    message = ('a'*1967) 
+    message = ('a'*2000) 
+
     sharedSecretKeys = []
     global diffieHellmanPrivate
     secretKeys1 = AliceGenerateSecretKeys()
     secretKeys2 = AliceGenerateSecretKeys()
+    # print(secretKeys1[0])
+    # print '----------'
+    # print(secretKeys1[1])
 
-    # privateKey = rsa.PrivateKey.load_pkcs1(alicePrivateKey,'PEM')
-    # signature = rsa.sign(message, privateKey, 'SHA-256')
-    # encryptedMessage = setAliceToBobAESCipher()
+    privateKey = rsa.PrivateKey.load_pkcs1(alicePrivateKey,'PEM')
+    signature = rsa.sign(message, privateKey, 'SHA-256')
+    setAliceToBobAESCipher(secretKeys1[0])
+    encryptedMessage = AESEncryptAliceToBob(message)
     # ClientSend([signature, encryptedMessage])
 
 
@@ -198,7 +203,8 @@ def Bob():
     
     # privateKey = rsa.PrivateKey.load_pkcs1(bobPrivateKey,'PEM')
     # signature = rsa.sign(message, privateKey, 'SHA-256')
-    # encryptedMessage = RSAEncrypt(message, alicePublicKey)
+    
+    # encryptedMessage = AESEncryptBobToAlice(message, alicePublicKey)
     # Server([signature, encryptedMessage])    
     # HMACMessage(message, str(s1))
 
