@@ -109,8 +109,6 @@ G9XqxvevbfX0hjjPJfV6qsSofL4BpnfnmjitbGGVV6KDegLtDsbANsp1n/ov9y3n
 rYxlTsFckzKCbA44pTMQuiKdWkcUE3vaKN18YPWYXC43XQK4f1s=
 -----END RSA PRIVATE KEY-----"""
 
-message = 'Boy, oh boy do I love pizza!'
-
 
 def HMACMessage(message,secretKey): # call by bob and send it to alice with the message, have alice decrypt the message and then call this function with the message, compare it with the hash she got from bob
     h = HMAC.new(secretKey)
@@ -174,31 +172,32 @@ def BobGenerateSecretKey():
 
 def Alice():
     message = ('a'*1967) 
+    sharedSecretKeys = []
+    global diffieHellmanPrivate
+    for x in range(0,4):
+        s1 = AliceGenerateSecretKey()
+        sharedSecretKeys.append(s1)
+    for x in sharedSecretKeys:
+        print x
+        print '--------------------------------------------'
 
-    # global diffieHellmanPrivate
-    # s1 = AliceGenerateSecretKey()
-    # diffieHellmanPrivate =  StrongRandom().randint(0,prime)
-    # s2 = AliceGenerateSecretKey()
-    # print s1
-    # print '-------------'
-    # print s2
-    # print '-------------'
     privateKey = rsa.PrivateKey.load_pkcs1(alicePrivateKey,'PEM')
     signature = rsa.sign(message, privateKey, 'SHA-256')
-    encryptedMessage = RSAEncrypt(message, bobPublicKey)
+    encryptedMessage = setAliceToBobAESCipher()
     ClientSend([signature, encryptedMessage])
 
 
 def Bob():
     message = ('b'*1967) 
+    sharedSecretKeys = []
     global diffieHellmanPrivate
-    s1 = BobGenerateSecretKey()
-    diffieHellmanPrivate =  StrongRandom().randint(0,prime)
-    s2 = BobGenerateSecretKey()
-    print s1
-    print '-------------'
-    print s2
-    print '-------------'
+    for x in range(0,4):
+        diffieHellmanPrivate =  StrongRandom().randint(0,prime)
+        s1 = BobGenerateSecretKey()
+        sharedSecretKeys.append(s1)
+    for x in sharedSecretKeys:
+        print x
+        print '--------------------------------------------'
     privateKey = rsa.PrivateKey.load_pkcs1(bobPrivateKey,'PEM')
     signature = rsa.sign(message, privateKey, 'SHA-256')
     encryptedMessage = RSAEncrypt(message, alicePublicKey)
@@ -222,7 +221,7 @@ def Server(message):
         # read a sentence of bytes from socket sent by the client
         sentence = pickle.loads(connectionSocket.recv(4096))
         # print('Recieved ', sentence)
-        if(len(sentence) == 2):
+        if(isinstance(sentence, list) and len(sentence) == 2):
             print('ayy')
         data_string = pickle.dumps(message)
         # print('Sending ', clientMessage)
