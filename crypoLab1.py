@@ -190,12 +190,10 @@ def Bob():
     aliceSentMessage = aesAliceToBobCipher.decrypt(AliceMessage[1])
 	
 	publicKey = rsa.PrivateKey.load_pkcs1(alicePublicKey,'PEM')
-    h = SHA.new(aliceSentMessage)
-	verifier = PKCS1_v1_5.new(key)
-	if verifier.verify(h, publicKey):
-		print "The signature is authentic."
-	else:
-		print "The signature is not authentic."
+    publicKeyClass = rsa.PublicKey.load_pkcs1_openssl_pem(publicKey)
+	if publicKeyClass.verify(aliceSentMessage,AliceMessage[0])
+		print 'success'
+
 
 def Server(message):
     # create TCP welcoming socket
