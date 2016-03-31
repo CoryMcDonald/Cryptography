@@ -148,8 +148,8 @@ def RSAEncrypt(message, publicKey):
 
 def RSADecrypt(encrypted, privateKey):
    privateKeyClass = rsa.PrivateKey.load_pkcs1(privateKey,'PEM')
-   decrypted = rsa.decrypt(privateKeyClass)
-   print 'decrypted', decrypted
+   decrypted = rsa.decrypt(encrypted, privateKeyClass)
+   return decrypted
 
 def DiffieHellman( privateKey):
     result = pow(g, privateKey, prime)
@@ -159,49 +159,47 @@ def generateSharedSecret(A, privateKey):
     return pow(A, privateKey, prime)
 
 
-def AliceGenerateSecretKey():
+def AliceGenerateSecretKeys():
+    RSASecret = str(StrongRandom().randint(0,256))
+    firstMessage = RSAEncrypt(RSASecret, bobPublicKey)
+    BobDH = ClientSend(firstMessage)    
     A = DiffieHellman(diffieHellmanPrivate)
-    B = long(ClientSend(A))    
-    sharedKey = generateSharedSecret(B, diffieHellmanPrivate)
-    return sharedKey
+    ClientSend(A)
+    s1 = RSASecret
+    s2 = generateSharedSecret(long(BobDH), diffieHellmanPrivate)
+    return [s1,s2]
 
-def BobGenerateSecretKey():
-    A = Server(DiffieHellman(diffieHellmanPrivate))
-    sharedKey = generateSharedSecret(A, diffieHellmanPrivate)
-    return sharedKey
+def BobGenerateSecretKeys():
+    B = DiffieHellman(diffieHellmanPrivate)
+    AliceRSA = Server(B)
+    AliceDH = long(Server(''))
+    s1 = RSADecrypt(AliceRSA, bobPrivateKey)
+    s2 = generateSharedSecret(AliceDH, diffieHellmanPrivate)
+    return [s1, s2]
 
 def Alice():
     message = ('a'*1967) 
     sharedSecretKeys = []
     global diffieHellmanPrivate
-    for x in range(0,4):
-        s1 = AliceGenerateSecretKey()
-        sharedSecretKeys.append(s1)
-    for x in sharedSecretKeys:
-        print x
-        print '--------------------------------------------'
+    secretKeys1 = AliceGenerateSecretKeys()
+    secretKeys2 = AliceGenerateSecretKeys()
 
-    privateKey = rsa.PrivateKey.load_pkcs1(alicePrivateKey,'PEM')
-    signature = rsa.sign(message, privateKey, 'SHA-256')
-    encryptedMessage = setAliceToBobAESCipher()
-    ClientSend([signature, encryptedMessage])
+    # privateKey = rsa.PrivateKey.load_pkcs1(alicePrivateKey,'PEM')
+    # signature = rsa.sign(message, privateKey, 'SHA-256')
+    # encryptedMessage = setAliceToBobAESCipher()
+    # ClientSend([signature, encryptedMessage])
 
 
 def Bob():
     message = ('b'*1967) 
-    sharedSecretKeys = []
     global diffieHellmanPrivate
-    for x in range(0,4):
-        diffieHellmanPrivate =  StrongRandom().randint(0,prime)
-        s1 = BobGenerateSecretKey()
-        sharedSecretKeys.append(s1)
-    for x in sharedSecretKeys:
-        print x
-        print '--------------------------------------------'
-    privateKey = rsa.PrivateKey.load_pkcs1(bobPrivateKey,'PEM')
-    signature = rsa.sign(message, privateKey, 'SHA-256')
-    encryptedMessage = RSAEncrypt(message, alicePublicKey)
-    Server([signature, encryptedMessage])    
+    secretKeys1 = BobGenerateSecretKeys()
+    secretKeys2 = BobGenerateSecretKeys()
+    
+    # privateKey = rsa.PrivateKey.load_pkcs1(bobPrivateKey,'PEM')
+    # signature = rsa.sign(message, privateKey, 'SHA-256')
+    # encryptedMessage = RSAEncrypt(message, alicePublicKey)
+    # Server([signature, encryptedMessage])    
     # HMACMessage(message, str(s1))
 
     
@@ -221,8 +219,8 @@ def Server(message):
         # read a sentence of bytes from socket sent by the client
         sentence = pickle.loads(connectionSocket.recv(4096))
         # print('Recieved ', sentence)
-        if(isinstance(sentence, list) and len(sentence) == 2):
-            print('ayy')
+        # if(isinstance(sentence, list) and len(sentence) == 2):
+        #     print('ayy')
         data_string = pickle.dumps(message)
         # print('Sending ', clientMessage)
 
