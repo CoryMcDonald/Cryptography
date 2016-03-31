@@ -113,22 +113,22 @@ def HMACMessage(message,secretKey)# call by bob and send it to alice with the me
 	return h.hexdigest()
 
 def setAliceToBobAESCipher(secretKey) #Pass first secret key
-	aesAliceToBobCipher = AES.new(secretKey)
+	global aesAliceToBobCipher = AES.new(secretKey)
 
 def AESEncryptAliceToBob(plaintext)#Call from alice and then send by RSA
-	aesAliceToBobCipher.encrypt(plaintext)
+	return aesAliceToBobCipher.encrypt(plaintext)
 	
 def AESDecryptAliceToBob(ciphertext)#Call by bob after getting it from alice
-	aesAliceToBobCipher.decrypt(ciphertext)
+	return aesAliceToBobCipher.decrypt(ciphertext)
 	
 def setBobToAliceAESCipher(secretKey) #Pass second secret key
-	aesBobToAliceCipher = AES.new(secretKey)
+	global aesBobToAliceCipher = AES.new(secretKey)
 
 def AESEncryptBobToAlice(plaintext)#call by bob and then send to alice by RSA
-	aesBobToAliceCipher.encrypt(plaintext)
+	return aesBobToAliceCipher.encrypt(plaintext)
 	
 def AESDecryptBobToAlice(ciphertext)#call by alice to decrypt bob's message
-	aesBobToAliceCipher.decrypt(ciphertext)
+	return aesBobToAliceCipher.decrypt(ciphertext)
 	
 diffieHellmanPrivate = StrongRandom().randint(0,prime)
 
