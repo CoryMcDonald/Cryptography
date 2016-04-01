@@ -153,46 +153,60 @@ def BobGenerateSecretKeys():
     return [s1, s2]
 
 def Alice():
-    message = ('a'*2000) 
-    sharedSecretKeys = []
     global diffieHellmanPrivate
+    message = ('a'*2000) 
+    print 'Create first set of keys'
     secretKeys1 = AliceGenerateSecretKeys()
+    print 'Create second set of keys'
     secretKeys2 = AliceGenerateSecretKeys()
+
+    print 'Create AES message'
     aesAliceToBobCipher = AES.new(str(secretKeys1[0]))
     h = SHA256.new()
     h.update(str(secretKeys1[1]))
     aesBobToAliceCipher = AES.new(h.hexdigest()[0:16])
 
+    print 'Sign message and encrypt'
     privateKey = rsa.PrivateKey.load_pkcs1(alicePrivateKey,'PEM')
     signature = rsa.sign(message, privateKey, 'SHA-256')
     encryptedMessage = aesAliceToBobCipher.encrypt(message)
     
+    print 'Sending signature and encrypted message to Bob'
     BobMessage = ClientSend([signature, encryptedMessage])
+
     decryptedMessage = aesBobToAliceCipher.decrypt(BobMessage[1])
     if(BobMessage[0] == HMACMessage(decryptedMessage,str(secretKeys2[1]))):
         print 'success'
+        print decryptedMessage
+        print len(decryptedMessage)
         
 
 def Bob():
-    message = ('b'*1000) + '1' + '0'*7
     global diffieHellmanPrivate
+    message = ('b'*1000) + '1' + '0'*7
+
+    print 'Create first set of keys'
     secretKeys1 = BobGenerateSecretKeys()
+    print 'Create second set of keys'
     secretKeys2 = BobGenerateSecretKeys()
+    
     aesAliceToBobCipher = AES.new(str(secretKeys1[0]))
     h = SHA256.new()
     h.update(str(secretKeys1[1]))
     aesBobToAliceCipher = AES.new(h.hexdigest()[0:16])
-    
+
+    print 'Generate private keys and stuff'
     privateKey = rsa.PrivateKey.load_pkcs1(bobPrivateKey,'PEM')
     encryptedMessage = aesBobToAliceCipher.encrypt(message)
     hmac = HMACMessage(message, str(secretKeys2[1]))
     print 'Generate HMAC and send'
     AliceMessage = Server([hmac, encryptedMessage])
-    print('decrypted alice message' , AliceMessage)
+    print('decrypted alice message')
     aliceSentMessage = aesAliceToBobCipher.decrypt(AliceMessage[1])
-    print AliceMessage[0]
-    if rsa.verify(aliceSentMessage,AliceMessage[0], alicePublicKey):
+    if rsa.verify(aliceSentMessage,AliceMessage[0], rsa.PublicKey.load_pkcs1_openssl_pem(alicePublicKey)):
         print 'success'
+        print aliceSentMessage
+        print len(aliceSentMessage)
 
 
 def Server(message):
