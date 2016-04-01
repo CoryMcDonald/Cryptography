@@ -177,6 +177,7 @@ def Alice():
     decryptedMessage = aesBobToAliceCipher.decrypt(BobMessage[1])
     if(BobMessage[0] == HMACMessage(decryptedMessage,str(secretKeys2[1]))):
         print 'success'
+        decryptedMessage = decryptedMessage[:-8]
         print decryptedMessage
         print len(decryptedMessage)
         
