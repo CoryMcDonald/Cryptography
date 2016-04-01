@@ -166,10 +166,13 @@ def Alice():
 
     privateKey = rsa.PrivateKey.load_pkcs1(alicePrivateKey,'PEM')
     signature = rsa.sign(message, privateKey, 'SHA-256')
+    length = 16 - (len(message) % 16)
+    message += chr(length)*length
     encryptedMessage = aesAliceToBobCipher.encrypt(message)
     
     BobMessage = ClientSend([signature, encryptedMessage])
     decryptedMessage = aesBobToAliceCipher.decrypt(BobMessage[1])
+    decryptedMessage = decryptedMessage[:-decryptedMessage[-1]] 
     if(BobMessage[0] == HMACMessage(decryptedMessage,secretKeys2[1])):
         print 'success'
         
@@ -185,15 +188,17 @@ def Bob():
     aesBobToAliceCipher = AES.new(h.hexdigest()[0:16])
     
     privateKey = rsa.PrivateKey.load_pkcs1(bobPrivateKey,'PEM')
+    length = 16 - (len(message) % 16)
+    message += chr(length)*length
     encryptedMessage = aesBobToAliceCipher.encrypt(message)
     hmac = HMACMessage(message, str(secretKeys2[1]))
     
     AliceMessage = Server([hmac, encryptedMessage])
-    aliceSentMessage = aesAliceToBobCipher.decrypt(AliceMessage[1])
-    
+    decryptedMessage = aesAliceToBobCipher.decrypt(AliceMessage[1])
+    decryptedMessage = decryptedMessage[:-decryptedMessage[-1]] 
     publicKey = rsa.PrivateKey.load_pkcs1(alicePublicKey,'PEM')
     publicKeyClass = rsa.PublicKey.load_pkcs1_openssl_pem(publicKey)
-    if publicKeyClass.verify(aliceSentMessage,AliceMessage[0]):
+    if publicKeyClass.verify(decryptedMessage,AliceMessage[0]):
         print 'success'
 
 
