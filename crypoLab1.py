@@ -197,7 +197,7 @@ def Bob():
     decryptedMessage = aesAliceToBobCipher.decrypt(AliceMessage[1])
     decryptedMessage = decryptedMessage[:-decryptedMessage[-1]] 
     publicKeyClass = rsa.PublicKey.load_pkcs1_openssl_pem(alicePublicKey)
-    if publicKeyClass.verify(decryptedMessage,AliceMessage[0], publicKeyClass):
+    if rsa.verify(decryptedMessage,AliceMessage[0], publicKeyClass):
         print 'success'
 
 
