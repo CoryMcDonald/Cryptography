@@ -160,7 +160,9 @@ def Alice():
     secretKeys1 = AliceGenerateSecretKeys()
     secretKeys2 = AliceGenerateSecretKeys()
     aesAliceToBobCipher = AES.new(str(secretKeys1[0]))
-    aesBobToAliceCipher = AES.new(str(secretKeys1[1]))
+    h = SHA256.new()
+    h.update(str(secretKeys1[1]))
+    aesBobToAliceCipher = AES.new(h.hexdigest()[0:16])
 
     privateKey = rsa.PrivateKey.load_pkcs1(alicePrivateKey,'PEM')
     signature = rsa.sign(message, privateKey, 'SHA-256')
@@ -178,7 +180,9 @@ def Bob():
     secretKeys1 = BobGenerateSecretKeys()
     secretKeys2 = BobGenerateSecretKeys()
     aesAliceToBobCipher = AES.new(str(secretKeys1[0]))
-    aesBobToAliceCipher = AES.new(str(secretKeys1[1]))
+    h = SHA256.new()
+    h.update(str(secretKeys1[1]))
+    aesBobToAliceCipher = AES.new(h.hexdigest()[0:16])
     
     privateKey = rsa.PrivateKey.load_pkcs1(bobPrivateKey,'PEM')
     aesBobToAliceCipher.encrypt(message)
