@@ -154,45 +154,44 @@ def BobGenerateSecretKeys():
     return [s1, s2]
 
 def Alice():
-    message = ('a'*2000) 
+    message = ('a'*1000) 
     sharedSecretKeys = []
     global diffieHellmanPrivate
     secretKeys1 = AliceGenerateSecretKeys()
-	aesAliceToBobCipher = AES.new(secretKeys1[0])
-	aesBobToAliceCipher = AES.new(secretKeys1[2])
     secretKeys2 = AliceGenerateSecretKeys()
+    aesAliceToBobCipher = AES.new(str(secretKeys1[0]))
+    aesBobToAliceCipher = AES.new(str(secretKeys2[0]))
 
     privateKey = rsa.PrivateKey.load_pkcs1(alicePrivateKey,'PEM')
     signature = rsa.sign(message, privateKey, 'SHA-256')
-    setAliceToBobAESCipher(secretKeys1[0])
     encryptedMessage = aesAliceToBobCipher.encrypt(message)
-	
+    
     BobMessage = ClientSend([signature, encryptedMessage])
-	decryptedMessage = aesBobToAliceCipher.decrypt(BobMessage[1])
-	if(BobMessage[0] == HMACMessage(decryptedMessage,secretKeys2[1]))
-		print 'success'
-		
+    decryptedMessage = aesBobToAliceCipher.decrypt(BobMessage[1])
+    if(BobMessage[0] == HMACMessage(decryptedMessage,secretKeys2[1])):
+        print 'success'
+        
 
 def Bob():
-    message = ('b'*1967) 
+    message = ('b'*2000) 
     global diffieHellmanPrivate
     secretKeys1 = BobGenerateSecretKeys()
-	aesAliceToBobCipher = AES.new(secretKeys1[0])
-	aesBobToAliceCipher = AES.new(secretKeys1[2])
     secretKeys2 = BobGenerateSecretKeys()
+    aesAliceToBobCipher = AES.new(str(secretKeys1[0]))
+    aesBobToAliceCipher = AES.new(str(secretKeys2[0]))
     
     privateKey = rsa.PrivateKey.load_pkcs1(bobPrivateKey,'PEM')
-	aesBobToAliceCipher.encrypt(message)
+    aesBobToAliceCipher.encrypt(message)
     encryptedMessage = AESEncryptBobToAlice(message, alicePublicKey)
     hmac = HMACMessage(message, str(secretKeys2[1]))
-	
+    
     AliceMessage = Server([hmac, encryptedMessage])
     aliceSentMessage = aesAliceToBobCipher.decrypt(AliceMessage[1])
-	
-	publicKey = rsa.PrivateKey.load_pkcs1(alicePublicKey,'PEM')
+    
+    publicKey = rsa.PrivateKey.load_pkcs1(alicePublicKey,'PEM')
     publicKeyClass = rsa.PublicKey.load_pkcs1_openssl_pem(publicKey)
-	if publicKeyClass.verify(aliceSentMessage,AliceMessage[0])
-		print 'success'
+    if publicKeyClass.verify(aliceSentMessage,AliceMessage[0]):
+        print 'success'
 
 
 def Server(message):
