@@ -188,7 +188,7 @@ def Bob():
     hmac = HMACMessage(message, str(secretKeys2[1]))
     print 'Generate HMAC and send'
     AliceMessage = Server([hmac, encryptedMessage])
-    print('decrypted alice message')
+    print('decrypted alice message' , AliceMessage)
     aliceSentMessage = aesAliceToBobCipher.decrypt(AliceMessage[1])
     print AliceMessage[0]
     if rsa.verify(aliceSentMessage,AliceMessage[0], alicePublicKey):
