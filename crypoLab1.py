@@ -154,7 +154,7 @@ def BobGenerateSecretKeys():
     return [s1, s2]
 
 def Alice():
-    message = ('a'*1000) 
+    message = ('a'*2000) 
     sharedSecretKeys = []
     global diffieHellmanPrivate
     secretKeys1 = AliceGenerateSecretKeys()
@@ -175,7 +175,7 @@ def Alice():
         
 
 def Bob():
-    message = ('b'*2000) 
+    message = ('b'*1000) 
     global diffieHellmanPrivate
     secretKeys1 = BobGenerateSecretKeys()
     secretKeys2 = BobGenerateSecretKeys()
