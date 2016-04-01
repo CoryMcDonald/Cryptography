@@ -182,7 +182,6 @@ def Bob():
     
     privateKey = rsa.PrivateKey.load_pkcs1(bobPrivateKey,'PEM')
     aesBobToAliceCipher.encrypt(message)
-    encryptedMessage = AESEncryptBobToAlice(message, alicePublicKey)
     hmac = HMACMessage(message, str(secretKeys2[1]))
     
     AliceMessage = Server([hmac, encryptedMessage])
