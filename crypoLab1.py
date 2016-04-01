@@ -1,6 +1,5 @@
 import Crypto
 import pickle
-from Crypto.PublicKey import RSA
 from Crypto.Random.random import StrongRandom
 from Crypto.Cipher import AES
 from Crypto.Hash import HMAC
@@ -170,12 +169,12 @@ def Alice():
     
     BobMessage = ClientSend([signature, encryptedMessage])
     decryptedMessage = aesBobToAliceCipher.decrypt(BobMessage[1])
-    if(BobMessage[0] == HMACMessage(decryptedMessage,secretKeys2[1])):
+    if(BobMessage[0] == HMACMessage(decryptedMessage,str(secretKeys2[1]))):
         print 'success'
         
 
 def Bob():
-    message = ('b'*1000) 
+    message = ('b'*1000) + '1' + '0'*7
     global diffieHellmanPrivate
     secretKeys1 = BobGenerateSecretKeys()
     secretKeys2 = BobGenerateSecretKeys()
@@ -187,13 +186,12 @@ def Bob():
     privateKey = rsa.PrivateKey.load_pkcs1(bobPrivateKey,'PEM')
     encryptedMessage = aesBobToAliceCipher.encrypt(message)
     hmac = HMACMessage(message, str(secretKeys2[1]))
-    
+    print 'Generate HMAC and send'
     AliceMessage = Server([hmac, encryptedMessage])
+    print('decrypted alice message')
     aliceSentMessage = aesAliceToBobCipher.decrypt(AliceMessage[1])
-    
-    publicKey = rsa.PrivateKey.load_pkcs1(alicePublicKey,'PEM')
-    publicKeyClass = rsa.PublicKey.load_pkcs1_openssl_pem(publicKey)
-    if publicKeyClass.verify(aliceSentMessage,AliceMessage[0]):
+    print AliceMessage[0]
+    if rsa.verify(aliceSentMessage,AliceMessage[0], alicePublicKey):
         print 'success'
 
 
@@ -210,7 +208,7 @@ def Server(message):
         # server waits for incoming requests; new socket created on return
         connectionSocket, addr = serverSocket.accept()
         # read a sentence of bytes from socket sent by the client
-        sentence = pickle.loads(connectionSocket.recv(4096))
+        sentence = pickle.loads(connectionSocket.recv(8192))
         # print('Recieved ', sentence)
         # if(isinstance(sentence, list) and len(sentence) == 2):
         #     print('ayy')
@@ -240,7 +238,7 @@ def ClientSend(sentence):
             data_string = pickle.dumps(sentence)
             clientSocket.send(data_string)
 
-            responseFromServer = clientSocket.recv(4096)
+            responseFromServer = clientSocket.recv(8192)
 
             responseFromServer = pickle.loads(responseFromServer)
             clientSocket.close()
