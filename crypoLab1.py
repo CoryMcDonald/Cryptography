@@ -152,12 +152,19 @@ def Alice():
     global diffieHellmanPrivate
     message = ('a'*2000) 
     secretKeys1 = AliceGenerateSecretKeys()
-    print 'Keys created for communication are'
-    print secretKeys1
+    print 'Key created for communication from Alice to Bob (Alice)'
+    print secretKeys1[0]
     print ''
     secretKeys2 = AliceGenerateSecretKeys()
-    print 'Keys created for integrity are '
-    print secretKeys2
+    print 'Key created for communication from Bob to Alice (Alice)'
+    print secretKeys1[0]
+    print ''
+    print 'Key created for Alice\'s integrity (Alice)'
+    print secretKeys2[0]
+    print ''
+    secretKeys2 = AliceGenerateSecretKeys()
+    print 'Key created for Bob\'s integrity (Alice)'
+    print secretKeys2[1]
     print ''
     #Setup AES cipher for communication from Alice to  Bob
     aesAliceToBobCipher = AES.new(str(secretKeys1[0]))
@@ -199,12 +206,19 @@ def Bob():
     message = ('b'*1000) + '1' + '0'*7
 
     secretKeys1 = BobGenerateSecretKeys()
-    print 'Keys created for communication are'
-    print secretKeys1
+    print 'Key created for communication from Alice to Bob (Bob)'
+    print secretKeys1[0]
     print ''
     secretKeys2 = BobGenerateSecretKeys()
-    print 'Keys created for integrity are'
-    print secretKeys2
+    print 'Key created for communication from Bob to Alice (Bob)'
+    print secretKeys1[1]
+    print ''
+    print 'Key created for Alice\'s integrity (Bob)'
+    print secretKeys2[0]
+    print ''
+    secretKeys2 = BobGenerateSecretKeys()
+    print 'Key created for Bob\'s integrity (Bob)'
+    print secretKeys2[1]
     print ''
     
     #Setup AES cipher for communication from Alice to Bob
