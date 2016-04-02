@@ -13,17 +13,6 @@ import sys
 import time
 from socket import error as socket_error
 
-# Alice (as a Client) needs to send a message of 2000 bytes to Bob (as a
-# Server), where each byte is 'a'; Bob needs to return a message of 1000 bytes back to Alice,
-# where each byte is 'b'. Either TCP or UDP is fine for the transport protocol.
-# Both messages must be encrypted and integrity-protected
-
-
-# Step 1: Set up shared secret keys for encryption: For the communication from Alice to Bob, they
-# agree on a shared secret key using RSA-based encryption. You can assume that they know each
-# other's public key in advance. For the communication from Bob to Alice, they agree on a shared
-# secret key using the Diffie-Hellman protocol. You can assume that Bob selects the public
-# parameters of Diffie-Hellman protocol, and send them to Alice
 serverName = 'localhost'
 sharedSecret = 'DC83C6A952B5D52A9E57FDAB05BE8D085BD0197862399DAE763BB2C898B8AF45'
 
@@ -109,7 +98,7 @@ rYxlTsFckzKCbA44pTMQuiKdWkcUE3vaKN18YPWYXC43XQK4f1s=
 -----END RSA PRIVATE KEY-----"""
 
 
-def HMACMessage(message,secretKey): # call by bob and send it to alice with the message, have alice decrypt the message and then call this function with the message, compare it with the hash she got from bob
+def HMACMessage(message,secretKey):
     h = HMAC.new(secretKey)
     h.update(message)
     return h.digest()
@@ -135,19 +124,26 @@ def generateSharedSecret(A, privateKey):
 
 
 def AliceGenerateSecretKeys():
+    #Secret key for communication from Alice to Bob
     RSASecret =str(StrongRandom().randint(10**31, (10**32)-1))
+    #Encrypt the secret key with bob's public key and send
     firstMessage = RSAEncrypt(RSASecret, bobPublicKey)
+    #Send the message to bob, recieving Bob's diffiehellman
     BobDH = ClientSend(firstMessage)    
+    #compute and send alice's part of diffie hellman
     A = DiffieHellman(diffieHellmanPrivate)
     ClientSend(A)
+    #s1 is the secret key for communication from Alice to Bob, s2 is the shared secret key made using diffie hellman
     s1 = RSASecret
     s2 = generateSharedSecret(long(BobDH), diffieHellmanPrivate)
     return [s1,s2]
 
 def BobGenerateSecretKeys():
     B = DiffieHellman(diffieHellmanPrivate)
+    #Send Alice the computed diffie hellman, getting back the shared secret key for communication from Alice to Bob
     AliceRSA = Server(B)
     AliceDH = long(Server(''))
+    #s1 is the secret key for communication from Alice to Bob, s2 is the shared secret key made using diffie hellman
     s1 = RSADecrypt(AliceRSA, bobPrivateKey)
     s2 = generateSharedSecret(AliceDH, diffieHellmanPrivate)
     return [s1, s2]
@@ -155,36 +151,42 @@ def BobGenerateSecretKeys():
 def Alice():
     global diffieHellmanPrivate
     message = ('a'*2000) 
-    secretKeys1 = BobGenerateSecretKeys()
-    print 'Keys created are'
+    secretKeys1 = AliceGenerateSecretKeys()
+    print 'Keys created for communication are'
     print secretKeys1
     print ''
-    secretKeys2 = BobGenerateSecretKeys()
-    print 'Keys created are'
-    print secretKeys1
+    secretKeys2 = AliceGenerateSecretKeys()
+    print 'Keys created for integrity are '
+    print secretKeys2
     print ''
-
+    #Setup AES cipher for communication from Alice to  Bob
     aesAliceToBobCipher = AES.new(str(secretKeys1[0]))
     h = SHA256.new()
     h.update(str(secretKeys1[1]))
+    #Setup AES cipher fromm Bob to Alice using a hash of the secret key truncated to the correct size.
     aesBobToAliceCipher = AES.new(h.hexdigest()[0:16])
 
     print 'Plaintext: '
     print message
     print ''
+    #Sign the hash of the message 
     privateKey = rsa.PrivateKey.load_pkcs1(alicePrivateKey,'PEM')    
     signature = rsa.sign(message, privateKey, 'SHA-256')
+    #Encrypt the message using AES
     encryptedMessage = aesAliceToBobCipher.encrypt(message)
     
     print 'ciphertext:'
     print encryptedMessage
     print ''
     
+    #Send the signature and Alice's encrypted message to Bob, and get back his encrypted message and HMAC
     BobMessage = ClientSend([signature, encryptedMessage])
-    print 'recieved ciphertext: '
+    print 'recieved HMAC and ciphertext: '
     print  BobMessage
     print ''
+    #Decrypt Bob's message
     decryptedMessage = aesBobToAliceCipher.decrypt(BobMessage[1])
+    #Check the HMAC of bob's message with the HMAC sent
     if(BobMessage[0] == HMACMessage(decryptedMessage,str(secretKeys2[1]))):
         print 'decrypted message: '
         decryptedMessage = decryptedMessage[:-8]
@@ -197,20 +199,22 @@ def Bob():
     message = ('b'*1000) + '1' + '0'*7
 
     secretKeys1 = BobGenerateSecretKeys()
-    print 'Keys created are'
+    print 'Keys created for communication are'
     print secretKeys1
     print ''
     secretKeys2 = BobGenerateSecretKeys()
-    print 'Keys created are'
-    print secretKeys1
+    print 'Keys created for integrity are'
+    print secretKeys2
     print ''
-
+    
+    #Setup AES cipher for communication from Alice to Bob
     aesAliceToBobCipher = AES.new(str(secretKeys1[0]))
+    #Setup cipher for communication from Bob to Alice using the key from diffie hellman
     h = SHA256.new()
     h.update(str(secretKeys1[1]))
     aesBobToAliceCipher = AES.new(h.hexdigest()[0:16])
     
-    privateKey = rsa.PrivateKey.load_pkcs1(bobPrivateKey,'PEM')
+    #Encrypt message using AES and verify with HMAC
     encryptedMessage = aesBobToAliceCipher.encrypt(message)
     hmac = HMACMessage(message, str(secretKeys2[1]))
     
@@ -224,11 +228,14 @@ def Bob():
     print hmac
     print ''
 
+    #Get back Alice's message and signature while sending her the HMAC and encrypted message
     AliceMessage = Server([hmac, encryptedMessage])
     print 'recieved ciphertext: '
     print  AliceMessage
     print ''
+    #Decrypt Alice's message
     aliceSentMessage = aesAliceToBobCipher.decrypt(AliceMessage[1])
+    #Verify Alice's signature with using her public key
     if rsa.verify(aliceSentMessage,AliceMessage[0], rsa.PublicKey.load_pkcs1_openssl_pem(alicePublicKey)):
         print 'decrypted message: '
         print aliceSentMessage
